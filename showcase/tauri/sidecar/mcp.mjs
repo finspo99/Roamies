@@ -279,7 +279,7 @@ export function createMcpTools({ mcp, ask, isYes, allowActions = () => true, ski
         const v = checkCall({ name: tool, annotations: t.annotations });
         if (v.level === BLOCK) throw new Error(`Blocked for safety: ${v.reason}`);
         // Always allow covers a connection's ordinary tools; the ones that delete, send or pay (v.always) still ask.
-        if (v.level !== 'safe' && !(trusted(server) && !v.always) && !(await confirm(`${server}: ${tool} ${clipText(JSON.stringify(parsed), 160)}`, ctx, v.always))) throw new Error(`${userName} said no, so ${tool} wasn't run.`);
+        if (v.level !== 'safe' && !(trusted(server) && !v.always) && !(await confirm(`${server}: ${tool}\nExact action details (check recipient and full content):\n${clipText(JSON.stringify(parsed, null, 2), v.always ? 2400 : 160)}`, ctx, v.always))) throw new Error(`${userName} said no, so ${tool} wasn't run.`);
         return t.execute(parsed, ctx);
       },
     },
