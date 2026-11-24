@@ -20,7 +20,7 @@ const fake = {
       calls.push(['connect', c.name, c.env ?? null, c.headers ?? null]);
       if (c.name.startsWith('linear') && !signedIn) return { name: c.name, ok: false, toolCount: 0, tools: [], error: 'Requires login.', requiresAuth: true };
       if (c.name === 'broken') return { name: c.name, ok: false, toolCount: 0, tools: [], error: 'spawn ENOENT' };
-      const tools = c.name === 'notes' ? [tool('notes', 'search_notes', { readOnlyHint: true }), tool('notes', 'delete_note', { destructiveHint: true })] : [tool(c.name, 'ping')];
+      const tools = c.name === 'notes' ? [tool('notes', 'search_notes', { readOnlyHint: true }), tool('notes', 'delete_note', { destructiveHint: true }), tool('notes', 'send_email'), tool('notes', 'make_call')] : [tool(c.name, 'ping')];
       return { name: c.name, ok: true, toolCount: tools.length, tools };
     });
   },
@@ -173,6 +173,16 @@ console.log('mcp ok');
   answers = [null];
   await assert.rejects(T.use_connection.execute({ server: 'notes', tool: 'delete_note', args: '{}' }), /Ken said no/);
   assert.equal(asked.length, 1, 'destructive: asked even with Allow prompts skipped');
+
+  // Sending email and placing calls always ask, even on an always-allowed connection, and show full details.
+  asked.length = 0; answers = [null];
+  await assert.rejects(T.use_connection.execute({ server: 'notes', tool: 'send_email', args: JSON.stringify({ to: 'person@example.com', subject: 'Hello', body: 'The complete message text' }) }), /Ken said no/);
+  assert.equal(asked.length, 1);
+  assert.match(asked[0].placeholder, /person@example.com/);
+  assert.match(asked[0].placeholder, /The complete message text/);
+  asked.length = 0; answers = [null];
+  await assert.rejects(T.use_connection.execute({ server: 'notes', tool: 'make_call', args: JSON.stringify({ phone: '+447700900000', purpose: 'Confirm appointment' }) }), /Ken said no/);
+  assert.match(asked[0].placeholder, /Confirm appointment/);
   await assert.rejects(T.use_connection.execute({ server: 'notes', tool: 'search_notes', args: '[1]' }), /JSON object/);
   await assert.rejects(T.use_connection.execute({ server: 'notes', tool: 'search_notes', args: 'nope' }), /JSON object/);
 
